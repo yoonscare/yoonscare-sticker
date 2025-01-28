@@ -3,8 +3,13 @@ import replicate
 import os
 from dotenv import load_dotenv
 import requests
+import time
 from PIL import Image
 from io import BytesIO
+
+# 세션 상태 초기화
+if 'replicate_client' not in st.session_state:
+   st.session_state.replicate_client = None
 
 # 페이지 설정
 st.set_page_config(
@@ -143,45 +148,66 @@ if st.button("Generate Sticker", type="primary"):
    else:
        try:
            with st.spinner("✨ Creating your sticker... Please wait..."):
-               # 환경 변수 설정
-               os.environ["REPLICATE_API_TOKEN"] = api_key
+               # API 토큰 설정 및 클라이언트 초기화
+               headers = {"Authorization": f"Token {api_key}"}
                
-               # 모델 실행
-               output = replicate.run(
-                   "fofr/sticker-maker:4acb778eb059772225ec213948f0660867b2e03f277448f18cf1800b96a65a1a",
-                   input={
-                       "prompt": prompt,
-                       "steps": steps,
-                       "width": image_size,
-                       "height": image_size,
-                       "output_format": "png",
-                       "output_quality": 100,
-                       "negative_prompt": "",
-                       "number_of_images": 1
+               # API 직접 호출
+               response = requests.post(
+                   "https://api.replicate.com/v1/predictions",
+                   headers=headers,
+                   json={
+                       "version": "4acb778eb059772225ec213948f0660867b2e03f277448f18cf1800b96a65a1a",
+                       "input": {
+                           "prompt": prompt,
+                           "steps": steps,
+                           "width": image_size,
+                           "height": image_size,
+                           "output_format": "png",
+                           "output_quality": 100,
+                           "negative_prompt": "",
+                           "number_of_images": 1
+                       }
                    }
                )
                
-               image_url = str(output[0])
-               response = requests.get(image_url)
+               if response.status_code != 201:
+                   st.error(f"Error: {response.text}")
+                   return
+
+               prediction = response.json()
                
-               if response.status_code == 200:
-                   st.success("✅ Sticker generated successfully!")
+               # 결과 대기
+               while prediction['status'] not in ['succeeded', 'failed']:
+                   time.sleep(1)
+                   response = requests.get(
+                       f"https://api.replicate.com/v1/predictions/{prediction['id']}",
+                       headers=headers
+                   )
+                   prediction = response.json()
+               
+               if prediction['status'] == 'succeeded':
+                   image_url = prediction['output'][0]
+                   img_response = requests.get(image_url)
                    
-                   # 이미지 표시를 중앙에 배치
-                   col1, col2, col3 = st.columns([1, 2, 1])
-                   with col2:
-                       st.image(response.content, caption="Your Generated Sticker")
+                   if img_response.status_code == 200:
+                       st.success("✅ Sticker generated successfully!")
                        
-                       # 다운로드 버튼
-                       st.download_button(
-                           label="⬇️ Download Sticker",
-                           data=response.content,
-                           file_name="ai_sticker.png",
-                           mime="image/png",
-                           use_container_width=True
-                       )
+                       # 이미지 표시
+                       col1, col2, col3 = st.columns([1, 2, 1])
+                       with col2:
+                           st.image(img_response.content, caption="Your Generated Sticker")
+                           
+                           st.download_button(
+                               label="⬇️ Download Sticker",
+                               data=img_response.content,
+                               file_name="ai_sticker.png",
+                               mime="image/png",
+                               use_container_width=True
+                           )
+                   else:
+                       st.error("Failed to download the generated image.")
                else:
-                   st.error("Failed to download the generated image.")
+                   st.error(f"Generation failed: {prediction.get('error', 'Unknown error')}")
                    
        except Exception as e:
            st.error(f"An error occurred: {str(e)}")
