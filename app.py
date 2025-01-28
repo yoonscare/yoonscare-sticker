@@ -141,40 +141,40 @@ with st.sidebar:
 
 # 생성 버튼 - 메인 영역에 추가
 if st.button("Generate Sticker", type="primary"):
-   if not api_key:
-       st.error("⚠️ Please enter your Replicate API key first!")
-   elif not prompt:
-       st.error("⚠️ Please enter a description for your sticker!")
-   else:
-       try:
-           with st.spinner("✨ Creating your sticker... Please wait..."):
-               # API 토큰 설정 및 클라이언트 초기화
-               headers = {"Authorization": f"Token {api_key}"}
-               
-               # API 직접 호출
-               response = requests.post(
-                   "https://api.replicate.com/v1/predictions",
-                   headers=headers,
-                   json={
-                       "version": "4acb778eb059772225ec213948f0660867b2e03f277448f18cf1800b96a65a1a",
-                       "input": {
-                           "prompt": prompt,
-                           "steps": steps,
-                           "width": image_size,
-                           "height": image_size,
-                           "output_format": "png",
-                           "output_quality": 100,
-                           "negative_prompt": "",
-                           "number_of_images": 1
-                       }
-                   }
-               )
-               
-               if response.status_code != 201:
-                   st.error(f"Error: {response.text}")
-                   return
+    if not api_key:
+        st.error("⚠️ Please enter your Replicate API key first!")
+    elif not prompt:
+        st.error("⚠️ Please enter a description for your sticker!")
+    else:
+        try:
+            with st.spinner("✨ Creating your sticker... Please wait..."):
+                # API 토큰 설정 및 클라이언트 초기화
+                headers = {"Authorization": f"Token {api_key}"}
+                
+                # API 직접 호출
+                response = requests.post(
+                    "https://api.replicate.com/v1/predictions",
+                    headers=headers,
+                    json={
+                        "version": "4acb778eb059772225ec213948f0660867b2e03f277448f18cf1800b96a65a1a",
+                        "input": {
+                            "prompt": prompt,
+                            "steps": steps,
+                            "width": image_size,
+                            "height": image_size,
+                            "output_format": "png",
+                            "output_quality": 100,
+                            "negative_prompt": "",
+                            "number_of_images": 1
+                        }
+                    }
+                )
+                
+                if response.status_code != 201:
+                    st.error(f"Error: {response.text}")
+                    st.stop()  # return 대신 st.stop() 사용
 
-               prediction = response.json()
+                prediction = response.json()
                
                # 결과 대기
                while prediction['status'] not in ['succeeded', 'failed']:
