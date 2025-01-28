@@ -6,15 +6,15 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-# 다크 테마 설정
+# 페이지 설정
 st.set_page_config(
     page_title="AI Sticker Maker",
     page_icon="🎨",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="expanded"
 )
 
-# 커스텀 CSS 추가
+# 커스텀 CSS
 st.markdown("""
     <style>
         .stApp {
@@ -44,58 +44,56 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 메인 컨테이너
-main_container = st.container()
-with main_container:
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.title("AI Sticker Maker 🎨")
-        st.markdown("Generate unique stickers using AI! Just enter a description and customize your settings.")
+# 메인 영역
+st.title("AI Sticker Maker 🎨")
+st.markdown("Generate unique stickers using AI! Just enter a description and customize your settings.")
 
-    with col2:
-        # API 키 입력
-        api_key = st.text_input(
-            "Replicate API Key",
-            type="password",
-            help="Get your API key from https://replicate.com/account",
-            placeholder="r8_xxxx..."
-        )
-
-# 입력 섹션
-input_container = st.container()
-with input_container:
-    col1, col2 = st.columns([2, 1])
+# 사이드바 설정
+with st.sidebar:
+    st.header("Settings")
     
-    with col1:
-        prompt = st.text_area(
-            "Sticker Description",
-            placeholder="Enter a description (e.g., a cute cat playing with yarn)",
-            help="Be specific about what you want your sticker to look like"
-        )
+    # API 키 입력
+    api_key = st.text_input(
+        "Replicate API Key",
+        type="password",
+        help="Get your API key from https://replicate.com/account",
+        placeholder="r8_xxxx..."
+    )
     
-    with col2:
-        steps = st.slider(
-            "Quality Steps",
-            min_value=10,
-            max_value=50,
-            value=20,
-            help="Higher values = better quality but slower"
-        )
-        
-        size_option = st.selectbox(
-            "Sticker Size",
-            options=["Small (576x576)", "Medium (768x768)", "Large (1152x1152)"],
-            index=1
-        )
-
-# 사이즈 매핑
-size_map = {
-    "Small (576x576)": 576,
-    "Medium (768x768)": 768,
-    "Large (1152x1152)": 1152
-}
-image_size = size_map[size_option]
+    st.markdown("---")
+    
+    # 스티커 설정
+    st.header("Sticker Settings")
+    
+    # 프롬프트 입력
+    prompt = st.text_area(
+        "Description",
+        placeholder="Enter a description (e.g., a cute nurse)",
+        help="Describe what you want your sticker to look like"
+    )
+    
+    # 품질 설정
+    steps = st.slider(
+        "Quality Steps",
+        min_value=10,
+        max_value=50,
+        value=20,
+        help="Higher values = better quality but slower"
+    )
+    
+    # 크기 설정
+    size_option = st.selectbox(
+        "Sticker Size",
+        options=["Small (576x576)", "Medium (768x768)", "Large (1152x1152)"],
+        index=1
+    )
+    
+    size_map = {
+        "Small (576x576)": 576,
+        "Medium (768x768)": 768,
+        "Large (1152x1152)": 1152
+    }
+    image_size = size_map[size_option]
 
 # 생성 버튼
 if st.button("Generate Sticker", type="primary", use_container_width=True):
@@ -127,14 +125,20 @@ if st.button("Generate Sticker", type="primary", use_container_width=True):
                 
                 if response.status_code == 200:
                     st.success("✅ Sticker generated successfully!")
-                    st.image(response.content, caption="Your Generated Sticker")
                     
-                    st.download_button(
-                        label="⬇️ Download Sticker",
-                        data=response.content,
-                        file_name="ai_sticker.png",
-                        mime="image/png"
-                    )
+                    # 이미지 표시를 중앙에 배치
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col2:
+                        st.image(response.content, caption="Your Generated Sticker")
+                        
+                        # 다운로드 버튼
+                        st.download_button(
+                            label="⬇️ Download Sticker",
+                            data=response.content,
+                            file_name="ai_sticker.png",
+                            mime="image/png",
+                            use_container_width=True
+                        )
                 else:
                     st.error("Failed to download the generated image.")
                     
@@ -145,7 +149,7 @@ if st.button("Generate Sticker", type="primary", use_container_width=True):
 with st.expander("How to Use"):
     st.markdown("""
     1. Get your Replicate API key from [replicate.com/account](https://replicate.com/account)
-    2. Enter your API key in the input field above
+    2. Enter your API key in the sidebar
     3. Write a detailed description of the sticker you want
     4. Adjust quality and size settings
     5. Click 'Generate Sticker' and wait for the magic!
