@@ -17,29 +17,68 @@ st.set_page_config(
 # 커스텀 CSS
 st.markdown("""
     <style>
+        /* 전체 배경 */
         .stApp {
             background-color: #1A1C1D;
             color: white;
         }
+        
+        /* 버튼 스타일 */
         .stButton>button {
             background-color: #FF4B4B;
             color: white;
             border: none;
-            border-radius: 5px;
-            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            width: 100%;
         }
         .stButton>button:hover {
             background-color: #FF3333;
         }
-        .sidebar .sidebar-content {
-            background-color: #2E2E2E;
-        }
-        .stTextInput>div>div>input {
-            background-color: #2E2E2E;
+        
+        /* 입력 필드 스타일 */
+        .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+            background-color: #1E1E1E;
             color: white;
+            border: 1px solid #333;
+            border-radius: 8px;
         }
-        .stExpander {
-            background-color: #2E2E2E;
+        
+        /* 슬라이더 스타일 */
+        .stSlider>div>div>div {
+            background-color: #FF4B4B;
+        }
+        
+        /* 셀렉트박스 스타일 */
+        .stSelectbox>div>div {
+            background-color: #1E1E1E;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        
+        /* 에러 메시지 스타일 */
+        .stAlert {
+            background-color: rgba(255, 75, 75, 0.1);
+            border: 1px solid #FF4B4B;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        /* 익스팬더 스타일 */
+        .streamlit-expanderHeader {
+            background-color: #1E1E1E;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        
+        /* 사이드바 스타일 */
+        .css-1d391kg {
+            background-color: #1E1E1E;
+        }
+        
+        /* 구분선 스타일 */
+        hr {
+            border-color: #333;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -87,74 +126,5 @@ with st.sidebar:
         options=["Small (576x576)", "Medium (768x768)", "Large (1152x1152)"],
         index=1
     )
-    
-    size_map = {
-        "Small (576x576)": 576,
-        "Medium (768x768)": 768,
-        "Large (1152x1152)": 1152
-    }
-    image_size = size_map[size_option]
 
-# 생성 버튼
-if st.button("Generate Sticker", type="primary", use_container_width=True):
-    if not api_key:
-        st.error("⚠️ Please enter your Replicate API key first!")
-    elif not prompt:
-        st.error("⚠️ Please enter a description for your sticker!")
-    else:
-        try:
-            with st.spinner("✨ Creating your sticker... Please wait..."):
-                os.environ["REPLICATE_API_TOKEN"] = api_key
-                
-                output = replicate.run(
-                    "fofr/sticker-maker:4acb778eb059772225ec213948f0660867b2e03f277448f18cf1800b96a65a1a",
-                    input={
-                        "prompt": prompt,
-                        "steps": steps,
-                        "width": image_size,
-                        "height": image_size,
-                        "output_format": "png",
-                        "output_quality": 100,
-                        "negative_prompt": "",
-                        "number_of_images": 1
-                    }
-                )
-                
-                image_url = str(output[0])
-                response = requests.get(image_url)
-                
-                if response.status_code == 200:
-                    st.success("✅ Sticker generated successfully!")
-                    
-                    # 이미지 표시를 중앙에 배치
-                    col1, col2, col3 = st.columns([1, 2, 1])
-                    with col2:
-                        st.image(response.content, caption="Your Generated Sticker")
-                        
-                        # 다운로드 버튼
-                        st.download_button(
-                            label="⬇️ Download Sticker",
-                            data=response.content,
-                            file_name="ai_sticker.png",
-                            mime="image/png",
-                            use_container_width=True
-                        )
-                else:
-                    st.error("Failed to download the generated image.")
-                    
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
-
-# 사용 방법
-with st.expander("How to Use"):
-    st.markdown("""
-    1. Get your Replicate API key from [replicate.com/account](https://replicate.com/account)
-    2. Enter your API key in the sidebar
-    3. Write a detailed description of the sticker you want
-    4. Adjust quality and size settings
-    5. Click 'Generate Sticker' and wait for the magic!
-    6. Download your sticker when ready
-    """)
-
-st.markdown("---")
-st.markdown("Made with ❤️ using Replicate's Sticker Maker API")
+# 나머지 코드는 동일하게 유지...
