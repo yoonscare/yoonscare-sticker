@@ -141,54 +141,50 @@ if st.button("Generate Sticker", type="primary"):
    elif not prompt:
        st.error("⚠️ Please enter a description for your sticker!")
    else:
-       if not api_key.startswith('r8_'):
-           st.error("⚠️ API key should start with 'r8_'")
-       elif len(api_key) < 50:
-           st.error("⚠️ API key seems too short. Please check if you copied the entire key")
-       else:
-           try:
-               with st.spinner("✨ Creating your sticker... Please wait..."):
-                   # API 키로 클라이언트 초기화
-                   client = replicate.Client(api_token=api_key)
+       try:
+           with st.spinner("✨ Creating your sticker... Please wait..."):
+               # 환경 변수 설정
+               os.environ["REPLICATE_API_TOKEN"] = api_key
+               
+               # 모델 실행
+               output = replicate.run(
+                   "fofr/sticker-maker:4acb778eb059772225ec213948f0660867b2e03f277448f18cf1800b96a65a1a",
+                   input={
+                       "prompt": prompt,
+                       "steps": steps,
+                       "width": image_size,
+                       "height": image_size,
+                       "output_format": "png",
+                       "output_quality": 100,
+                       "negative_prompt": "",
+                       "number_of_images": 1
+                   }
+               )
+               
+               image_url = str(output[0])
+               response = requests.get(image_url)
+               
+               if response.status_code == 200:
+                   st.success("✅ Sticker generated successfully!")
                    
-                   output = client.run(
-                       "fofr/sticker-maker:4acb778eb059772225ec213948f0660867b2e03f277448f18cf1800b96a65a1a",
-                       input={
-                           "prompt": prompt,
-                           "steps": steps,
-                           "width": image_size,
-                           "height": image_size,
-                           "output_format": "png",
-                           "output_quality": 100,
-                           "negative_prompt": "",
-                           "number_of_images": 1
-                       }
-                   )
-                   
-                   image_url = str(output[0])
-                   response = requests.get(image_url)
-                   
-                   if response.status_code == 200:
-                       st.success("✅ Sticker generated successfully!")
+                   # 이미지 표시를 중앙에 배치
+                   col1, col2, col3 = st.columns([1, 2, 1])
+                   with col2:
+                       st.image(response.content, caption="Your Generated Sticker")
                        
-                       # 이미지 표시를 중앙에 배치
-                       col1, col2, col3 = st.columns([1, 2, 1])
-                       with col2:
-                           st.image(response.content, caption="Your Generated Sticker")
-                           
-                           # 다운로드 버튼
-                           st.download_button(
-                               label="⬇️ Download Sticker",
-                               data=response.content,
-                               file_name="ai_sticker.png",
-                               mime="image/png",
-                               use_container_width=True
-                           )
-                   else:
-                       st.error("Failed to download the generated image.")
-                       
-           except Exception as e:
-               st.error(f"An error occurred: {str(e)}")
+                       # 다운로드 버튼
+                       st.download_button(
+                           label="⬇️ Download Sticker",
+                           data=response.content,
+                           file_name="ai_sticker.png",
+                           mime="image/png",
+                           use_container_width=True
+                       )
+               else:
+                   st.error("Failed to download the generated image.")
+                   
+       except Exception as e:
+           st.error(f"An error occurred: {str(e)}")
 
 # 사용 방법
 with st.expander("How to Use"):
